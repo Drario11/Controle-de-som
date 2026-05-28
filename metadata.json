@@ -1,0 +1,6 @@
+{
+  "name": "Controle de Volume por Gesto",
+  "description": "Controle o volume do celular em qualquer tela usando um gesto composto de dois dedos (toque duplo e arraste).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Stylized speaker and volume indicator icons inside the 66dp center safe zone -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,44 L42,44 L50,34 L50,74 L42,64 L34,64 Z" />
+
+    <!-- Acoustic sound wave curves -->
+    <path
+        android:strokeWidth="4"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M58,46 A10,10 0 0,1 58,62" />
+
+    <path
+        android:strokeWidth="4"
+        android:strokeColor="#3B82F6"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M66,39 A19,19 0 0,1 66,69" />
+
+    <!-- Two-finger gestural vertical arrows signifying up/down control -->
+    <path
+        android:strokeWidth="3"
+        android:strokeColor="#8B5CF6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M78,34 L78,74 M74,40 L78,34 L82,40 M74,68 L78,74 L82,68" />
+
+    <path
+        android:strokeWidth="3"
+        android:strokeColor="#8B5CF6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M88,34 L88,74 M84,40 L88,34 L92,40 M84,68 L88,74 L92,68" />
+</vector>
