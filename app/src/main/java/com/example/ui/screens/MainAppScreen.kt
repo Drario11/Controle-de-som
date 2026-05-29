@@ -76,6 +76,8 @@ fun MainAppScreen(viewModel: MainViewModel) {
     val haptic by viewModel.hapticFeedback.collectAsState()
     val sound by viewModel.soundFeedback.collectAsState()
     val invisibleTrigger by viewModel.invisibleTrigger.collectAsState()
+    val manualControlAfterGesture by viewModel.manualControlAfterGesture.collectAsState()
+    val manualControlSwipe by viewModel.manualControlSwipe.collectAsState()
 
     Scaffold(
         modifier = Modifier
@@ -188,7 +190,107 @@ fun MainAppScreen(viewModel: MainViewModel) {
                     }
                 }
 
-                // 5. Active Screen Side Selector (Left vs Right)
+                // 5. Persistent manual volume control
+                item {
+                    SettingsCard {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Tune,
+                                            contentDescription = "Controle manual",
+                                            tint = if (manualControlAfterGesture) com.example.ui.theme.DarkAccent else com.example.ui.theme.DarkSecondaryText,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = "Controle Manual após Gesto",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 15.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = if (manualControlAfterGesture)
+                                            "Ativo: o visual do volume fica aberto com controles manuais e botão discreto de fechar."
+                                        else
+                                            "Inativo: o visual do volume fecha assim que você solta o gesto.",
+                                        fontSize = 11.sp,
+                                        lineHeight = 15.sp,
+                                        color = com.example.ui.theme.DarkSecondaryText
+                                    )
+                                }
+                                Switch(
+                                    checked = manualControlAfterGesture,
+                                    onCheckedChange = { viewModel.updateManualControlAfterGesture(it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = com.example.ui.theme.DarkAccentDarker,
+                                        checkedTrackColor = com.example.ui.theme.DarkAccent,
+                                        uncheckedThumbColor = com.example.ui.theme.DarkSecondaryText,
+                                        uncheckedTrackColor = com.example.ui.theme.DarkSurfaceVariant
+                                    )
+                                )
+                            }
+
+                            AnimatedVisibility(visible = manualControlAfterGesture) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.TouchApp,
+                                            contentDescription = "Arraste manual",
+                                            tint = if (manualControlSwipe) com.example.ui.theme.DarkAccent else com.example.ui.theme.DarkSecondaryText,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Column {
+                                            Text(
+                                                text = "Arraste no Controle Manual",
+                                                color = Color.White,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = "Ajuste o volume arrastando a área do controle para cima ou para baixo.",
+                                                color = com.example.ui.theme.DarkSecondaryText,
+                                                fontSize = 11.sp,
+                                                lineHeight = 14.sp
+                                            )
+                                        }
+                                    }
+                                    Switch(
+                                        checked = manualControlSwipe,
+                                        onCheckedChange = { viewModel.updateManualControlSwipe(it) },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = com.example.ui.theme.DarkAccentDarker,
+                                            checkedTrackColor = com.example.ui.theme.DarkAccent,
+                                            uncheckedThumbColor = com.example.ui.theme.DarkSecondaryText,
+                                            uncheckedTrackColor = com.example.ui.theme.DarkSurfaceVariant
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 6. Active Screen Side Selector (Left vs Right)
                 item {
                     SettingsCard {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -720,7 +822,8 @@ fun InteractiveSandboxCard(viewModel: MainViewModel, audioManager: AudioManager)
                 val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
                 if (max > 0) ((current.toFloat() / max) * 100).roundToInt() else 0
             },
-            getMaxVolume = { 100 }
+            getMaxVolume = { 100 },
+            allowSingleFingerDrag = true
         ).apply {
             sensitivityPixels = sensitivity
         }
@@ -740,7 +843,7 @@ fun InteractiveSandboxCard(viewModel: MainViewModel, audioManager: AudioManager)
                 fontSize = 15.sp
             )
             Text(
-                text = "Simule o gesto tocando duas vezes rápidas com dois dedos e deslize para cima/baixo na moldura abaixo:",
+                text = "Simule o gesto tocando e segurando na moldura abaixo; depois arraste para cima/baixo:",
                 fontSize = 11.sp,
                 color = com.example.ui.theme.DarkSecondaryText,
                 modifier = Modifier.padding(vertical = 4.dp)
@@ -784,13 +887,13 @@ fun InteractiveSandboxCard(viewModel: MainViewModel, audioManager: AudioManager)
                             modifier = Modifier.size(32.dp)
                         )
                         Text(
-                            text = "Dê 2 Toques e Segure com 2 Dedos",
+                            text = "Toque, Segure e Arraste",
                             color = Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Depois do segundo toque, mantenha os dedos na tela e deslize verticalmente para ver o volume do celular mudar.",
+                            text = "Mantenha o dedo na tela e deslize verticalmente para ver o volume do celular mudar.",
                             color = com.example.ui.theme.DarkSecondaryText,
                             fontSize = 10.sp,
                             textAlign = TextAlign.Center,
@@ -882,9 +985,9 @@ fun QuickTutorialCard() {
 
             val tutorials = listOf(
                 "1. Ative o serviço usando o botão de ativação acima nas configurações.",
-                "2. Dê dois toques rápidos com dois dedos bem próximos na lateral selecionada da tela e segure.",
-                "3. No segundo toque, mantenha os dois dedos encostados e arraste verticalmente.",
-                "4. Arraste para cima para aumentar e para baixo para diminuir o som.",
+                "2. Fora do app, encoste um dedo na lateral selecionada da tela e segure por um instante.",
+                "3. Arraste verticalmente: para cima aumenta e para baixo diminui o som.",
+                "4. O gesto antigo com dois dedos também continua disponível na área de teste.",
                 "5. Ative o 'Gatilho Oculto (Modo Invisível)' para que a guia fique 100% invisível ao assistir vídeos ou jogar!"
             )
 

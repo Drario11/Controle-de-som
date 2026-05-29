@@ -33,6 +33,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val hapticFeedback = MutableStateFlow(prefs.getBoolean("pref_haptic_feedback", true))
     val soundFeedback = MutableStateFlow(prefs.getBoolean("pref_sound_feedback", false))
     val invisibleTrigger = MutableStateFlow(prefs.getBoolean("pref_invisible_trigger", false))
+    val manualControlAfterGesture = MutableStateFlow(prefs.getBoolean("pref_manual_control_after_gesture", false))
+    val manualControlSwipe = MutableStateFlow(prefs.getBoolean("pref_manual_control_swipe", true))
 
     init {
         viewModelScope.launch {
@@ -85,6 +87,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun updateInvisibleTrigger(enabled: Boolean) {
         invisibleTrigger.value = enabled
         prefs.edit().putBoolean("pref_invisible_trigger", enabled).apply()
+    }
+
+    fun updateManualControlAfterGesture(enabled: Boolean) {
+        manualControlAfterGesture.value = enabled
+        prefs.edit().putBoolean("pref_manual_control_after_gesture", enabled).apply()
+    }
+
+    fun updateManualControlSwipe(enabled: Boolean) {
+        manualControlSwipe.value = enabled
+        prefs.edit().putBoolean("pref_manual_control_swipe", enabled).apply()
     }
 
     fun insertLog(log: VolumeGestureLog) {
