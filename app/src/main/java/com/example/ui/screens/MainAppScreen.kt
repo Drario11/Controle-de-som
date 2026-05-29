@@ -1,14 +1,16 @@
 package com.example.ui.screens
 
-import android.accessibilityservice.AccessibilityServiceInfo
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.view.MotionEvent
-import android.view.accessibility.AccessibilityManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -48,6 +50,11 @@ import com.example.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
+private fun hasPostNotificationsPermission(context: Context): Boolean {
+    return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainAppScreen(viewModel: MainViewModel) {
@@ -57,12 +64,19 @@ fun MainAppScreen(viewModel: MainViewModel) {
     // Service activity check states
     var isOverlayActive by remember { mutableStateOf(VolumeGestureOverlayService.isServiceRunning) }
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+    var hasNotificationPermission by remember { mutableStateOf(hasPostNotificationsPermission(context)) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasNotificationPermission = granted
+    }
 
     // Recheck permissions periodically when window gains focus/state resumes
     LaunchedEffect(Unit) {
         while (true) {
             isOverlayActive = VolumeGestureOverlayService.isServiceRunning
             hasOverlayPermission = Settings.canDrawOverlays(context)
+            hasNotificationPermission = hasPostNotificationsPermission(context)
             delay(1200)
         }
     }
@@ -116,6 +130,18 @@ fun MainAppScreen(viewModel: MainViewModel) {
                     }
                 }
 
+                if (!hasNotificationPermission) {
+                    item {
+                        NotificationPermissionCard(
+                            onRequestPermission = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            }
+                        )
+                    }
+                }
+
                 // 2. Main Service Management Card
                 item {
                     ServiceControlCard(
@@ -154,12 +180,12 @@ fun MainAppScreen(viewModel: MainViewModel) {
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.VisibilityOff,
-                                        contentDescription = "Ocultar",
+                                        contentDescription = "Linha guia lateral",
                                         tint = if (invisibleTrigger) com.example.ui.theme.DarkAccent else com.example.ui.theme.DarkSecondaryText,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Text(
-                                        text = "Gatilho Oculto (Modo Invisível)",
+                                        text = "Ocultar Linha Guia Lateral",
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White,
                                         fontSize = 15.sp
@@ -168,7 +194,7 @@ fun MainAppScreen(viewModel: MainViewModel) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = if (invisibleTrigger) 
-                                        "Ativo: A barra lateral fica 100% invisível ao olho nu. Ideal para usar discretamente em apps como YouTube e Instagram." 
+                                        "Ativo: a área lateral continua funcionando, mas a linha guia não é exibida na tela."
                                     else 
                                         "Inativo: exibe uma linha fina colorida na borda da tela guiando o posicionamento.",
                                     fontSize = 11.sp,
@@ -220,7 +246,7 @@ fun MainAppScreen(viewModel: MainViewModel) {
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = if (manualControlAfterGesture)
-                                            "Ativo: o visual do volume fica aberto com controles manuais e botão discreto de fechar."
+                                            "Ativo: o visual do volume fica aberto com controles manuais e botão de fechar."
                                         else
                                             "Inativo: o visual do volume fecha assim que você solta o gesto.",
                                         fontSize = 11.sp,
@@ -408,7 +434,7 @@ fun MainAppScreen(viewModel: MainViewModel) {
                                 fontSize = 15.sp
                             )
                             Text(
-                                text = "Dimensões da região invisível na lateral da tela.",
+                                text = "Dimensões da área de toque na lateral da tela.",
                                 fontSize = 11.sp,
                                 color = com.example.ui.theme.DarkSecondaryText,
                                 modifier = Modifier.padding(vertical = 4.dp)
@@ -660,6 +686,57 @@ fun PermissionRequiredCard(context: Context) {
             ) {
                 Text(
                     text = "Liberar nas Configurações",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = Color.Black
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun NotificationPermissionCard(onRequestPermission: () -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1976D2).copy(alpha = 0.12f)),
+        shape = RoundedCornerShape(20.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF64B5F6).copy(alpha = 0.28f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notificações",
+                    tint = Color(0xFF90CAF9),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Notificação do Serviço",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 15.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "O Android usa uma notificação persistente para indicar que o controle lateral está ativo. Essa permissão não é usada para anúncios.",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+                onClick = onRequestPermission,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF90CAF9)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Permitir Notificação",
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     color = Color.Black
@@ -988,7 +1065,7 @@ fun QuickTutorialCard() {
                 "2. Fora do app, encoste um dedo na lateral selecionada da tela e segure por um instante.",
                 "3. Arraste verticalmente: para cima aumenta e para baixo diminui o som.",
                 "4. O gesto antigo com dois dedos também continua disponível na área de teste.",
-                "5. Ative o 'Gatilho Oculto (Modo Invisível)' para que a guia fique 100% invisível ao assistir vídeos ou jogar!"
+                "5. Use 'Ocultar Linha Guia Lateral' se você já souber onde fica a área de toque na borda da tela."
             )
 
             tutorials.forEach { text ->
